@@ -6,3 +6,4 @@
 ** TODO launch lxc container
 ** TODO implement lxcenv backtracking feature
 ** TODO zsh autocomplete or fzf integration
+** TODO ansibel container templates
