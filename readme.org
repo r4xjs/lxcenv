@@ -1,0 +1,8 @@
+* Tasks
+** TODO port old lsh script to lxcenv
+** TODO implement lxcenv new [0/2]
+- [ ] create new container with matching .lxcenv file
+- [ ] add home directory mount entry to new container config
+** TODO launch lxc container
+** TODO implement lxcenv backtracking feature
+** TODO zsh autocomplete or fzf integration
