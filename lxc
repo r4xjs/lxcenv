@@ -104,6 +104,13 @@ Cmd:
   [d]elete <container-name>
   [l]ist
 
+Note: You can also add arguments which are passed
+      to the *run* command in the $ENVFILE file like so:
+      cat $ENVFILE
+      '''
+      test-container -L/tmp/\$(date +"%Y-%m-%d-%H_%M_%S")-aaa.log -- /usr/bin/zsh
+      '''
+
 EOF
 }
 
@@ -119,6 +126,7 @@ case "$cmd" in
     ;;
 "r" | "run")
     # lxc r 
+    # lxc r <-XXX>
     # lxc r <name>
     # lxc r <name> <lxc-args>
     lxc_args=""
@@ -129,7 +137,8 @@ case "$cmd" in
 	name=$(cat "$found_env" | cut -d' ' -f1)
 	shift
 	# take the rest of the arguments in $ENVFILE as <lxc-args>
-	lxc_args=$(cat "$found_env" | sed "s/^$name//" | cut -d' ' -f2-)
+	lxc_args=$(cat "$found_env" | sed "s/^$name//" | cut -d' ' -f2- | envsubst)
+	lxc_args=`eval "echo $lxc_args"`
     fi
     # if there is a second argument then this must be the container name
     [ $# -ge 2 ] && name="$2" && shift 2

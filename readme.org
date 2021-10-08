@@ -5,5 +5,6 @@
 - [X] add home directory mount entry to new container config
 ** DONE launch lxc container
 ** DONE implement lxcenv backtracking feature
+** TODO add .lxcenv signatures for better security
 ** TODO zsh autocomplete or fzf integration
 ** TODO ansibel container templates
