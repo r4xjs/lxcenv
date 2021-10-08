@@ -4,6 +4,6 @@
 - [X] create new container with matching .lxcenv file
 - [X] add home directory mount entry to new container config
 ** DONE launch lxc container
-** TODO implement lxcenv backtracking feature
+** DONE implement lxcenv backtracking feature
 ** TODO zsh autocomplete or fzf integration
 ** TODO ansibel container templates

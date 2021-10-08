@@ -30,6 +30,21 @@ container_kill() {
     fi
 }
 
+# src: https://unix.stackexchange.com/questions/6463/find-searching-in-parent-directories-instead-of-subdirectories
+find_up() {
+    start_path="$1"
+    end_path="$2"
+    shift 2
+    cur_path="$start_path"
+
+    while [ "$cur_path" != "$end_path" ];
+    do
+	found=$(find "$cur_path" -maxdepth 1 -mindepth 1 $@)
+	[ "$found" != "" ] && echo "$found" && return
+	cur_path="$(realpath "$cur_path"/..)"
+    done
+}
+
 
 # commands
 
@@ -106,12 +121,19 @@ case "$cmd" in
     # lxc r 
     # lxc r <name>
     # lxc r <name> <lxc-args>
-
+    lxc_args=""
     # no container name was given, try to get one from the $ENVFILE
-    [ $# -eq 1 ] && name=$(cat "$ENVFILE" | cut -d' ' -f1) && shift
+    if [ $# -eq 1 ]; then
+	found_env=$(find_up "$PWD" "$HOME" -iname "$ENVFILE")
+	[ "$found_env" == "" ] && error "Can't find $ENVFILE"
+	name=$(cat "$found_env" | cut -d' ' -f1)
+	shift
+	# take the rest of the arguments in $ENVFILE as <lxc-args>
+	lxc_args=$(cat "$found_env" | sed "s/^$name//" | cut -d' ' -f2-)
+    fi
     # if there is a second argument then this must be the container name
     [ $# -ge 2 ] && name="$2" && shift 2
-    run "$name" $@
+    run "$name" "$lxc_args" "$@"
     ;;
 "n" | "new")
     [ $# -le 2 ] && error "Command *new* needs a <name> and a <template> as argument"
@@ -126,4 +148,7 @@ case "$cmd" in
     ;;
 "l" | "list")
     list
+    ;;
+"t" | "test") 
+    ;;
 esac
