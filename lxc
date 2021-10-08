@@ -1,0 +1,129 @@
+#!/bin/bash
+set -euo pipefail
+
+ENVFILE=.lxcenv
+LXCSHARE="$HOME/.local/share/lxc"
+
+# helper
+
+error() {
+    echo "[!] ${1:-}"
+    exit 1
+}
+
+container_is_running() {
+    lxc-info -n "$1" | grep -P "State:\s+RUNNING" >/dev/null
+}
+
+container_eth0_ip() {
+    lxc-info -n "$1" | grep IP | head -1 | sed 's/ //g' | cut -d':' -f2
+}
+
+container_kill() {
+    if [ "$1" != "all" ]; then
+	container_is_running "$1" && lxc-stop -kn "$1"
+    else
+	# kill them all
+	for c in $(lxc-ls); do
+	    container_is_running "$c" && lxc-stop -kn "$c"
+	done
+    fi
+}
+
+
+# commands
+
+new() {
+    name="$1"
+    template="$2"
+
+    [ -f "$ENVFILE" ] && error "$ENVFILE already exists"
+
+    # save new container name to $ENVFILE
+    echo "$name" > "$ENVFILE"
+
+    # create a new container from the template
+    lxc-copy -B btrfs -n "$template" -N "$name" || error "Failed to create new container $name from $template"
+
+    # add new home mount entry to the container config
+    container_config="$LXCSHARE/$name/config"
+    echo "lxc.mount.entry = $PWD home none bind,rw 0 0" >> "$container_config"
+}
+
+delete() {
+    name="$1"
+    [ -f "$ENVFILE" ] && rm -f "$ENVFILE"
+    container_kill "$name"
+    lxc-destroy -n "$name"
+}
+
+run() {
+    name="$1"
+    shift 1
+
+    # Note: always keep $attach_args at the end such that we
+    #       can use -- for running commands inside the container
+    attach_args="${@:-}"
+
+    # if no -u option is given by the user set -u 1000 -g 1000 as default
+    echo $attach_args | grep -e '-u' > /dev/null || attach_args="-u 1000 -g 1000 $attach_args"
+    attach_args="--clear-env -v TERM=xterm $attach_args"
+
+    container_is_running "$name" || lxc-unpriv-start -n "$name"
+    cmd="lxc-unpriv-attach -n $name $attach_args"
+    echo "$cmd"
+    $cmd
+}
+
+list() {
+    lxc-ls -f
+}
+
+help() {
+    cat << EOF
+Usage: lxc <cmd> <cmd-args>
+Cmd:
+  [h]elp
+  [r]run <container-name> <lxc-args>
+  [n]ew <conainer-name> <template-name>
+  [d]elete <container-name>
+  [l]ist
+
+EOF
+}
+
+
+
+# argument parsing
+
+cmd="${1:-help}"
+
+case "$cmd" in
+"h" | "help")
+    help
+    ;;
+"r" | "run")
+    # lxc r 
+    # lxc r <name>
+    # lxc r <name> <lxc-args>
+
+    # no container name was given, try to get one from the $ENVFILE
+    [ $# -eq 1 ] && name=$(cat "$ENVFILE" | cut -d' ' -f1) && shift
+    # if there is a second argument then this must be the container name
+    [ $# -ge 2 ] && name="$2" && shift 2
+    run "$name" $@
+    ;;
+"n" | "new")
+    [ $# -le 2 ] && error "Command *new* needs a <name> and a <template> as argument"
+    name="$2"
+    template="$3"
+    new "$name" "$template"
+    ;;
+"d" | "del" | "delete")
+    [ $# -le 1 ] && error "Command *delete* needs a <name> as argument"
+    name="$2"
+    delete "$name"
+    ;;
+"l" | "list")
+    list
+esac
