@@ -1,13 +1,29 @@
 #!/bin/bash
 set -euo pipefail
 
-ENVFILE=.lxcenv
+# ----------------------------
+# Note about $ENVFILE signing:
+# ----------------------------
+# Signing the $ENVFILE is done to prevent attacks that drop a $ENVFILE 
+# in a archive or a repo or something similar in the hope that the victem
+# will execute it during *lxcenv* execution. Attacker control over the $ENVFILE 
+# is equivalent to code exection on the victem system. Therefore we
+# sign the $ENVFILE with a (before) generated gpg key and check the signature
+# before the content is used. This way an attacker needs to provide a $ENVFILE
+# with a valid signature. 
+# An attacker could still trick the user to import a public key named $GPGKEYNAME
+# and then provide a attacker signed $ENVFILE...
+
+
+
+ENVFILE=.lxcenv.asc
 LXCSHARE="$HOME/.local/share/lxc"
+GPGKEYNAME="lxcenv-protection"
 
 # helper
 
 error() {
-    echo "[!] ${1:-}"
+    echo "[!] ${1:-}" 1>&2
     exit 1
 }
 
@@ -45,6 +61,40 @@ find_up() {
     done
 }
 
+init_gpg_key() {
+    gpg --list-keys | grep "$GPGKEYNAME" >/dev/null && return
+    cat <<EOF > gpg_settings
+%no-protection
+Key-Type: default
+Subkey-Type: default
+Name-Real: $GPGKEYNAME
+Name-Email: lxcenv@localhost
+Expire-Date: 0
+EOF
+    gpg --batch --gen-key gpg_settings
+    rm gpg_settings
+}  
+
+resign_envfile() {
+    envfile="$1"
+
+    # When we resign a $ENVFILE it is expected that the signature does not mach anymore.
+    # In this case we can just ignore it.
+    env_content=$(cat "$envfile" | grep -e '----BEGIN PGP SIGNATURE----' -B1 | head -1)
+
+    # resign the content
+    echo "$env_content" | gpg --default-key "$GPGKEYNAME" -a -o "$envfile" --clear-sign -
+}
+
+read_envfile() {
+    envfile="$1"
+    content=$(gpg -o- --verify "$envfile" 2> /dev/null)
+    if [ $? -eq 0 ]; then
+	echo "$content"
+    else
+	error "Bad signature: $envfile"
+    fi
+}
 
 # commands
 
@@ -54,8 +104,8 @@ new() {
 
     [ -f "$ENVFILE" ] && error "$ENVFILE already exists"
 
-    # save new container name to $ENVFILE
-    echo "$name" > "$ENVFILE"
+    # save the signed container name to $ENVFILE
+    echo "$name" | gpg --default-key "$GPGKEYNAME" -a -o "$ENVFILE" --clear-sign -
 
     # create a new container from the template
     lxc-copy -B btrfs -n "$template" -N "$name" || error "Failed to create new container $name from $template"
@@ -100,9 +150,11 @@ Usage: lxc <cmd> <cmd-args>
 Cmd:
   [h]elp
   [r]run <container-name> <lxc-args>
+  [k]ill <container-name>
   [n]ew <conainer-name> <template-name>
   [d]elete <container-name>
   [l]ist
+  resign <path-to-lxcenv-file>
 
 Note: You can also add arguments which are passed
       to the *run* command in the $ENVFILE file like so:
@@ -114,6 +166,9 @@ Note: You can also add arguments which are passed
 EOF
 }
 
+
+# make sure we have our lxcenv gpg key
+init_gpg_key
 
 
 # argument parsing
@@ -134,15 +189,19 @@ case "$cmd" in
     if [ $# -eq 1 ]; then
 	found_env=$(find_up "$PWD" "$HOME" -iname "$ENVFILE")
 	[ "$found_env" == "" ] && error "Can't find $ENVFILE"
-	name=$(cat "$found_env" | cut -d' ' -f1)
+	name=$(read_envfile "$found_env" | cut -d' ' -f1)
 	shift
 	# take the rest of the arguments in $ENVFILE as <lxc-args>
-	lxc_args=$(cat "$found_env" | sed "s/^$name//" | cut -d' ' -f2- | envsubst)
+	lxc_args=$(read_envfile "$found_env" | sed "s/^$name//" | cut -d' ' -f2-)
 	lxc_args=`eval "echo $lxc_args"`
     fi
     # if there is a second argument then this must be the container name
     [ $# -ge 2 ] && name="$2" && shift 2
     run "$name" "$lxc_args" "$@"
+    ;;
+"k" | "kill")
+    [ $# -ne 2 ] && error "Please provide an <container-name> or *all* to"
+    container_kill "$2"
     ;;
 "n" | "new")
     [ $# -le 2 ] && error "Command *new* needs a <name> and a <template> as argument"
@@ -158,6 +217,12 @@ case "$cmd" in
 "l" | "list")
     list
     ;;
-"t" | "test") 
+"resign") 
+    envfile="${2:-$ENVFILE}"
+    [ -f "$envfile" ] || error "Can't find $envfile"
+    resign_envfile "$envfile"
+    ;;
+"test")
+    read_envfile "$ENVFILE"
     ;;
 esac
