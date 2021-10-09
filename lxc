@@ -185,18 +185,27 @@ case "$cmd" in
     # lxc r <name>
     # lxc r <name> <lxc-args>
     lxc_args=""
-    # no container name was given, try to get one from the $ENVFILE
-    if [ $# -eq 1 ]; then
+    if [ $# -eq 1 ] || echo "$2" | grep -e '^-' >/dev/null; then
+	# no container name was given, try to get one from the $ENVFILE
 	found_env=$(find_up "$PWD" "$HOME" -iname "$ENVFILE")
 	[ "$found_env" == "" ] && error "Can't find $ENVFILE"
 	name=$(read_envfile "$found_env" | cut -d' ' -f1)
-	shift
-	# take the rest of the arguments in $ENVFILE as <lxc-args>
-	lxc_args=$(read_envfile "$found_env" | sed "s/^$name//" | cut -d' ' -f2-)
-	lxc_args=`eval "echo $lxc_args"`
+	if [ $# -eq 1 ]; then
+	    # There are no user arguments passed, take optencial arguments
+	    # from the $ENVFILE
+	    lxc_args=$(read_envfile "$found_env" | sed "s/^$name//" | cut -d' ' -f2-)
+	    lxc_args=`eval "echo $lxc_args"`
+	    # remove the *run* command from the arguments, when *run* is the
+	    # only argument passed by the user
+	    shift
+	fi
     fi
-    # if there is a second argument then this must be the container name
-    [ $# -ge 2 ] && name="$2" && shift 2
+
+    # if there is a second argument and it does not start with "-" then this must be
+    # the container name
+    [ $# -ge 2 ] && echo "$2" | grep -ve '^-' >/dev/null && name="$2" && shift 2
+    # for the case when lxc run -XXX .. is passed, remove the *run* command from $@
+    [ $# -ge 2 ] && echo "$2" | grep -e  '^-' >/dev/null && shift
     run "$name" "$lxc_args" "$@"
     ;;
 "k" | "kill")
