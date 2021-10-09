@@ -6,5 +6,8 @@
 ** DONE launch lxc container
 ** DONE implement lxcenv backtracking feature
 ** DONE add .lxcenv signatures for better security
-** TODO zsh autocomplete or fzf integration
+** DONE zsh autocomplete or fzf integration [3/3]
+- [X] lxc [tab] --> show command list
+- [X] lxc r|k|d [tab] --> show container list
+- [X] lxc n <name> [tab] --> show template list
 ** TODO ansibel container templates
