@@ -1,4 +1,5 @@
 #!/usr/bin/zsh
+# based on: https://mrigank11.github.io/2018/03/zsh-auto-completion/
 
 list_container(){
     lxc-ls | sed 's/ /\n/g' | grep -ve '^$' | sed 's/$/:/g' | awk -F':' '{printf("XXX%s:container %sXXX\n", $1, $1);}' | sed "s/XXX/'/g" | tr '\n' ' '

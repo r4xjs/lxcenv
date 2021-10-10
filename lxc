@@ -132,7 +132,7 @@ run() {
 
     # if no -u option is given by the user set -u 1000 -g 1000 as default
     echo $attach_args | grep -e '-u' > /dev/null || attach_args="-u 1000 -g 1000 $attach_args"
-    attach_args="--clear-env -v TERM=xterm $attach_args"
+    attach_args="--clear-env -v TERM=xterm -v DISPLAY=:0 $attach_args"
 
     container_is_running "$name" || lxc-unpriv-start -n "$name"
     cmd="lxc-unpriv-attach -n $name $attach_args"
