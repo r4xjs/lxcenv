@@ -208,7 +208,7 @@ case "$cmd" in
     [ $# -ge 2 ] && echo "$2" | grep -e  '^-' >/dev/null && shift
     run "$name" "$lxc_args" "$@"
     ;;
-"k" | "kill")
+"k" | "kill" | "stop")
     [ $# -ne 2 ] && error "Please provide an <container-name> or *all* to"
     container_kill "$2"
     ;;
@@ -223,7 +223,7 @@ case "$cmd" in
     name="$2"
     delete "$name"
     ;;
-"l" | "list")
+"l" | "ls" | "list")
     list
     ;;
 "resign") 
