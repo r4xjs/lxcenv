@@ -10,10 +10,10 @@
 - [X] lxc [tab] --> show command list
 - [X] lxc r|k|d [tab] --> show container list
 - [X] lxc n <name> [tab] --> show template list
-** TODO container templates setup script [0/3]
-- [ ] create default user
-- [ ] add ssh keys
-- [ ] add sudo + openssh-server
+** DONE container templates setup script [3/3]
+- [X] create default user
+- [X] add ssh keys
+- [X] add sudo + openssh-server
 *** starting point
 #+begin_src shell :results output replace
 apt update -y && apt install -y sudo openssh-server
@@ -26,3 +26,9 @@ echo "{{ ansible_ssh_key }}" >> /home/ansible/.ssh/authorized_keys
 chown -R ansible:ansible /home/ansible
 chmod 700 /home/ansible/.ssh
 #+end_src
+** 
+** 
+
+** TODO configurable -B storage backend
+** TODO autocomplete lxc resign <tab>
+** TODO move proj home to /home/user/s
