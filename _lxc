@@ -1,4 +1,4 @@
-compdef _lxc lxc
+#compdef lxc
 # based on: https://blog.mads-hartmann.com/2017/08/06/writing-zsh-completion-scripts.html
 
 list_container(){
