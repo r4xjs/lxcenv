@@ -20,6 +20,12 @@ ENVFILE=.lxcenv.asc
 LXCSHARE="$HOME/.local/share/lxc"
 GPGKEYNAME="lxcenv-protection"
 
+if btrfs filesystem df "$LXCSHARE" &>/dev/null; then
+    BACKINGSTORE="btrfs"
+else
+    BACKINGSTORE="dir"
+fi
+
 # helper
 
 error() {
@@ -108,7 +114,7 @@ new() {
     echo "$name" | gpg --default-key "$GPGKEYNAME" -a -o "$ENVFILE" --clear-sign -
 
     # create a new container from the template
-    lxc-copy -B btrfs -n "$template" -N "$name" || error "Failed to create new container $name from $template"
+    lxc-copy -B "$BACKINGSTORE" -n "$template" -N "$name" || error "Failed to create new container $name from $template"
 
     # add new home mount entry to the container config
     container_config="$LXCSHARE/$name/config"

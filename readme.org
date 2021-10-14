@@ -29,6 +29,6 @@ chmod 700 /home/ansible/.ssh
 ** 
 ** 
 
-** TODO configurable -B storage backend
+** DONE configurable -B storage backend
 ** TODO autocomplete lxc resign <tab>
 ** TODO move proj home to /home/user/s
