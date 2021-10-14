@@ -1,0 +1,59 @@
+compdef _lxc lxc
+# based on: https://blog.mads-hartmann.com/2017/08/06/writing-zsh-completion-scripts.html
+
+list_container(){
+    lxc-ls | \
+	sed 's/ /\n/g' | \
+	grep -ve '^$' | \
+	sed 's/$/:/g' | \
+	awk -F':' '{printf("XXX%s:container %sXXX\n", $1, $1);}' | \
+	sed "s/XXX/'/g" | \
+	tr '\n' ' '
+}
+list_template(){
+    lxc-ls | \
+	sed 's/ /\n/g' | \
+	grep -ve '^$' |
+	grep --color=never -e '^template-' | \
+	    sed 's/$/:/g' | \
+	    awk -F':' '{printf("XXX%s:template %sXXX\n", $1, $1);}' | \
+	    sed "s/XXX/'/g" | \
+	    tr '\n' ' '
+}
+
+
+function _lxc {
+    local line
+
+    _arguments -C \
+        "1: :(run kill new delete list resign)"  \
+        "*::arg:->args"
+
+    case $line[1] in
+        run | kill | delete)
+	    _describe 'command' "($(list_container))"
+        ;;
+        new)
+	    _lxc_new
+        ;;
+        resign)
+	    _lxc_resign
+        ;;
+    esac
+}
+
+function _lxc_new {
+    local state
+    _arguments '2: :->templatelist'
+    case "$state" in
+	templatelist)
+	    _describe 'command' "($(list_template))"
+	    ;;
+    esac
+}
+
+function _lxc_resign {
+    lxcenv=""
+    [ -f ".lxcenv.asc" ] && lxcenv=".lxcenv.asc"
+    _arguments "1: :($lxcenv)"
+}

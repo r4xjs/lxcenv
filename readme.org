@@ -26,9 +26,6 @@ echo "{{ ansible_ssh_key }}" >> /home/ansible/.ssh/authorized_keys
 chown -R ansible:ansible /home/ansible
 chmod 700 /home/ansible/.ssh
 #+end_src
-** 
-** 
-
 ** DONE configurable -B storage backend
-** TODO autocomplete lxc resign <tab>
+** DONE autocomplete lxc resign <tab>
 ** TODO move proj home to /home/user/s
