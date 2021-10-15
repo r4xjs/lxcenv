@@ -28,4 +28,5 @@ chmod 700 /home/ansible/.ssh
 #+end_src
 ** DONE configurable -B storage backend
 ** DONE autocomplete lxc resign <tab>
-** TODO move proj home to /home/user/s
+** DONE move proj home to /home/user/s
+- lxc sucks ass so mount /mnt and symlink to is with /home/user/s
