@@ -128,7 +128,8 @@ delete() {
     name="$1"
     [ -f "$ENVFILE" ] && rm -f "$ENVFILE"
     container_is_running "$name" && container_kill "$name"
-    lxc-destroy -n "$name"
+    #lxc-destroy -n "$name"
+    sudo rm -rf "$HOME/.local/share/lxc/$name"
 }
 
 run() {
