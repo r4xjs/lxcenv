@@ -129,7 +129,7 @@ delete() {
     [ -f "$ENVFILE" ] && rm -f "$ENVFILE"
     container_is_running "$name" && container_kill "$name"
     #lxc-destroy -n "$name"
-    sudo rm -rf "$HOME/.local/share/lxc/$name"
+    sudo rm -rf "$LXCSHARE/$name"
 }
 
 run() {
