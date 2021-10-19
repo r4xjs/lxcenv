@@ -26,6 +26,11 @@ else
     BACKINGSTORE="dir"
 fi
 
+if which lxc-unpriv-start &>/dev/null; then
+    alias lxc-start='lxc-unpriv-start'
+    alias lxc-attach='lxc-unpriv-attach'
+fi
+
 # helper
 
 error() {
