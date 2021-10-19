@@ -27,8 +27,11 @@ else
 fi
 
 if which lxc-unpriv-start &>/dev/null; then
-    alias lxc-start='lxc-unpriv-start'
-    alias lxc-attach='lxc-unpriv-attach'
+    lxc_start='lxc-unpriv-start'
+    lxc_attach='lxc-unpriv-attach'
+else
+    lxc_start='lxc-start'
+    lxc_start='lxc-attach'
 fi
 
 # helper
@@ -149,8 +152,8 @@ run() {
     echo $attach_args | grep -e '-u' > /dev/null || attach_args="-u 1000 -g 1000 $attach_args"
     attach_args="--clear-env -v TERM=xterm -v DISPLAY=:0 $attach_args"
 
-    container_is_running "$name" || lxc-unpriv-start -n "$name"
-    cmd="lxc-unpriv-attach -n $name $attach_args"
+    container_is_running "$name" || $lxc_start -n "$name"
+    cmd="$lxc_attach -n $name $attach_args"
     echo "$cmd"
     $cmd
 }
