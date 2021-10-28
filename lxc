@@ -121,7 +121,7 @@ new() {
     # save the signed container name to $ENVFILE
     echo "$name" | gpg --default-key "$GPGKEYNAME" -a -o "$ENVFILE" --clear-sign -
 
-    container_kill "$template"
+    container_is_running && container_kill "$template"
 
     # create a new container from the template
     echo lxc-copy -B "$BACKINGSTORE" -n "$template" -N "$name" 
