@@ -121,10 +121,10 @@ new() {
     # save the signed container name to $ENVFILE
     echo "$name" | gpg --default-key "$GPGKEYNAME" -a -o "$ENVFILE" --clear-sign -
 
-    container_is_running && container_kill "$template"
+    container_is_running "$template" && container_kill "$template"
 
     # create a new container from the template
-    echo lxc-copy -B "$BACKINGSTORE" -n "$template" -N "$name" 
+    echo lxc-copy -B "$BACKINGSTORE" -n "$template" -N "$name"
     lxc-copy -B "$BACKINGSTORE" -n "$template" -N "$name" || error "Failed to create new container $name from $template"
 
     # add new home mount entry to the container config
