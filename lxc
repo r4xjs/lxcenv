@@ -168,6 +168,7 @@ Usage: lxc <cmd> <cmd-args>
 Cmd:
   [h]elp
   [r]run <container-name> <lxc-args>
+  [x]runx <container-name> <lxc-args>
   [k]ill <container-name>
   [n]ew <conainer-name> <template-name>
   [d]elete <container-name>
@@ -204,19 +205,19 @@ case "$cmd" in
     # lxc r <name> <lxc-args>
     lxc_args=""
     if [ $# -eq 1 ] || echo "$2" | grep -e '^-' >/dev/null; then
-	# no container name was given, try to get one from the $ENVFILE
-	found_env=$(find_up "$PWD" "$HOME" -iname "$ENVFILE")
-	[ "$found_env" == "" ] && error "Can't find $ENVFILE"
-	name=$(read_envfile "$found_env" | cut -d' ' -f1)
-	if [ $# -eq 1 ]; then
-	    # There are no user arguments passed, take optencial arguments
-	    # from the $ENVFILE
-	    lxc_args=$(read_envfile "$found_env" | sed "s/^$name//" | cut -d' ' -f2-)
-	    lxc_args=`eval "echo $lxc_args"`
-	    # remove the *run* command from the arguments, when *run* is the
-	    # only argument passed by the user
-	    shift
-	fi
+        # no container name was given, try to get one from the $ENVFILE
+        found_env=$(find_up "$PWD" "$HOME" -iname "$ENVFILE")
+        [ "$found_env" == "" ] && error "Can't find $ENVFILE"
+        name=$(read_envfile "$found_env" | cut -d' ' -f1)
+        if [ $# -eq 1 ]; then
+            # There are no user arguments passed, take optencial arguments
+            # from the $ENVFILE
+            lxc_args=$(read_envfile "$found_env" | sed "s/^$name//" | cut -d' ' -f2-)
+            lxc_args=`eval "echo $lxc_args"`
+            # remove the *run* command from the arguments, when *run* is the
+            # only argument passed by the user
+            shift
+        fi
     fi
 
     # if there is a second argument and it does not start with "-" then this must be
@@ -225,6 +226,14 @@ case "$cmd" in
     # for the case when lxc run -XXX .. is passed, remove the *run* command from $@
     [ $# -ge 2 ] && echo "$2" | grep -e  '^-' >/dev/null && shift
     run "$name" "$lxc_args" "$@"
+    ;;
+
+"x" | "runx")
+    name="$2"
+    container_is_running "$name" || ( $lxc_start -n "$name" && sleep 3 )
+    container_ip=$(container_eth0_ip "$name")
+    shift 2
+    ssh -X user@"$container_ip" "$@"
     ;;
 "k" | "kill" | "stop")
     [ $# -ne 2 ] && error "Please provide an <container-name> or *all* to"
@@ -244,7 +253,7 @@ case "$cmd" in
 "l" | "ls" | "list")
     list
     ;;
-"resign") 
+"resign")
     envfile="${2:-$ENVFILE}"
     [ -f "$envfile" ] || error "Can't find $envfile"
     resign_envfile "$envfile"
